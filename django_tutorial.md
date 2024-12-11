@@ -216,11 +216,15 @@ STATICFILES_DIRS = [
 ## Index, About & Linking
 Linking href of anchor tags to urls defined in urls.py
 ```html
+<!-- templates/pages/about.html -->
+
 <a href="{% url 'index' %}">
 ```
 
 Using conditionals
 ```html
+<!-- templates/partials/_navbar.html -->
+
 <li
     {% if '/' == request.path %}
         class="nav-item active mr-3"
@@ -245,7 +249,336 @@ Using conditionals
 
 ### Adding a query parameter in the url
 ```python
+# listings/urls.py
+
 urlpatterns = [
     path('<int:listing_id>', views.listing, name='listing')
 ]
 ```
+
+# Models, Migrations & Admin
+
+## Install Postgress & Admin
+- use postgres user while doing the development
+- password setup will be during the postgres install
+- create a database with owner as postgres
+- grant all permissions for the postgres user
+
+## Django postgres setup and migrate
+
+### Install psycopg2
+1. pip install psycopg2
+2. pip install psycopg2-binary
+
+Error: 
+```console
+building 'psycopg2._psycopg' extension
+  error: Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  error: subprocess-exited-with-error
+```
+Solution:
+1. Download Microsoft C++ Build Tools: Visit Microsoft C++ Build Tools and download the installer.
+2. Install the Required Components: During installation, select the Desktop development with C++ workload. Ensure the following components are selected:
+	1. MSVC v143 - VS 2022 C++ x64/x86 Build Tools
+	2. Windows 10 SDK (or newer)
+3. Restart the Terminal: After installation, restart your terminal or IDE to apply changes.
+
+Before the above steps solved my problem, I also tried the the below workarounds.
+1. Add bin folder PostgreSQL to the PATH variables
+2. Update pip
+
+### Updating the settings.py file and applying the default migrations
+```python
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "btredb",
+        "USER": "postgres",
+        "PASSWORD": "pguser1234",
+        "HOST": "127.0.0.1",
+        "PORT": "5432",
+    }
+}
+```
+
+Error: 
+```console
+"C:\Users\anand\OneDrive\Documents\Projects\btre_project\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 29, in <module>
+    raise ImproperlyConfigured("Error loading psycopg2 or psycopg module")
+```
+Solution: It seems we should use psycopg for newer projects. psycopg2 is being maintained for legacy codebases.
+
+Before the above steps solved my problem, I also tried the the below workarounds.
+1. Added postgressql_psycopg2 in the settings.py file
+2. Tried keeping the binary version of psycopg2 alone in the virtual environment
+3. Verified that virtual environment is active and python version of interpreter is correct
+
+## Planning our schemas
+- id (int) is automatically inserted and incremented
+
+### LISTING
+id: INT
+realtor: INT (FOREIGN KEY [REALTOR])
+title: STR
+address: STR
+city: STR
+state: STR
+zipcode: STR
+description: TEXT
+price: INT
+bedrooms: INT
+bathrooms: FLOAT
+garage: INT (default 0)
+sqft: INT
+lot_size: FLOAT (Eg: 1.2 acres)
+is_published: BOOL [default true]
+list_date: DATE
+photo_main: STR
+photo_1: STR
+photo_2: STR
+photo_3: STR
+photo_4: STR
+photo_5: STR
+photo_6: STR
+
+### REALTOR
+id: INT
+name: STR
+photo: STR
+description: TEXT
+email: STR
+phone: STR
+is_mvp: BOOLEAN [default 0]
+hire_date: DATE
+
+### CONTACTS
+id: INT
+user_id: INT
+listing: INT
+listing_id: INT
+name: STR
+email: STR
+phone: STR
+message: TEXT
+contact_date: DATE
+
+## Create Listing Model
+- model name should always be the singular version of the app name. (Eg: Listing model in Listings App)
+- every model should inherit from the models.Model
+
+```python
+# listings/models.py
+from django.db import models
+from datetime import datetime
+from realtors.models import Realtor
+
+# Create your models here.
+
+class Listing(models.Model):
+	# if realtor is deleted, do nothing to the listings which have that realtor as the foreign key
+    realtor = models.ForeignKey(Realtor, on_delete=models.DO_NOTHING)
+
+    # basic text field
+    address = models.CharField(max_length=200)
+
+    # longer text field
+    # optional field
+    description = models.TextField(blank=True)
+
+    # integer
+    price = models.IntegerField()
+
+    # Eg: 2.5, 3.7
+    bathrooms = models.DecimalField(max_digits=2, decimal_places=1)
+
+    # default value
+    garage = models.IntegerField(default=0)
+
+    # string value of the location of the photo
+    # anything that we upload in through the admin goes to the media folder
+    # Within that media folder, we are organizing photos by year, month and day
+    photo_main = models.ImageField(upload_to='photos/%Y/%m/%d/')
+
+    # true / false
+    is_published = models.BooleanField(default=True)
+
+    # datetime package from python
+    list_date = models.DateTimeField(default=datetime.now, blank=True)
+
+    def __str__(self):
+        return self.title
+```
+
+## Realtor Model and Run Migrations
+Create the migrations files
+```console
+py manage.py makemigrations
+```
+
+To see the SQL query that is going to create the table in the database
+```console
+py manage.py sqlmigrate listings 0001
+```
+Output:
+```sql
+CREATE TABLE "listings_listing" ("id" bigint NOT NULL PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY, "title" varchar(200) NOT NULL, "address" varchar(200) NOT NULL, "city" varchar(100) NOT NULL, "state" varchar(100) NOT NULL, "zipcode" varchar(20) NOT NULL, "description" text NOT NULL, "price" integer NOT NULL, "bedrooms" integer NOT NULL, "bathrooms" numeric(2, 1) NOT NULL, "garage" integer NOT NULL, "sqft" integer NOT NULL, "lot_size" numeric(5, 1) NOT NULL, "photo_main" varchar(100) NOT NULL, "photo_1" varchar(100) NOT NULL, "photo_2" varchar(100) NOT NULL, "photo_3" varchar(100) NOT NULL, "photo_4" varchar(100) NOT NULL, "photo_5" varchar(100) NOT NULL, "photo_6" varchar(100) NOT NULL, "is_published" boolean NOT NULL, "list_date" timestamp with time zone NOT NULL, "realtor_id" bigint NOT NULL);
+ALTER TABLE "listings_listing" ADD CONSTRAINT "listings_listing_realtor_id_90583529_fk_realtors_realtor_id" FOREIGN KEY ("realtor_id") REFERENCES "realtors_realtor" ("id") DEFERRABLE INITIALLY DEFERRED;
+CREATE INDEX "listings_listing_realtor_id_90583529" ON "listings_listing" ("realtor_id");
+COMMIT;
+```
+
+Change the Database by commiting the new tables as part of the migration
+```console
+py manage.py migrate
+```
+
+## Create Superuser and Register models with Admin
+```console
+py manage.py createsuperuser
+```
+
+- staff_status = True means that the user log in to the admin console
+
+```python
+# listings/admin.py
+from django.contrib import admin
+from .models import Listing
+
+admin.site.register(Listing)
+```
+
+- In the admin console, the bold paramters are the ones that are mandatory.
+- Each model field gets the required type of input field
+
+## Media Folder and Adding Data
+To redirect all the uploads done through the admin area to the media folder
+```python
+# BASE_DIR/settings.py
+
+MEDIA_ROOT = path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+
+# BASE_DIR/urls.py
+
+from django.conf.urls.static import static
+from django.conf import settings
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+## Admin Logo and CSS
+Adding the company logo
+- templates/admin/base_site.html - these folder and file namings are necessary
+- extending the base.html page of admin
+- load the static assets
+- "branding" block for the company name
+
+```html
+<!-- templates/admin/base_site.html -->
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block branding %}
+    <h1 id="head">
+        <img src="{% static 'img/logo.png' %}" alt="BT Real Estate" height="50" width="80" class="brand_img">
+        Admin Area
+    </h1>
+{% endblock branding %}
+```
+
+Adding CSS colors
+- extrastyle block for linking the required css files
+```css
+/* templates/admin/base_site.html */
+
+{% block extrastyle %}
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock extrastyle %}
+```
+
+- css file with all the required changes for each elements
+```css
+/* ========= HEADER ========= */
+
+#header {
+    height: 50px;
+    background: #10284e;
+    color: white;
+}
+
+#branding h1 {
+    color: white;
+}
+
+a:link, a:visited {
+    color: #10284e;
+}
+
+div.breadcrumbs {
+    background: #30caa0;
+    color: #10284e;
+}
+
+div.breadcrumbs a {
+    color: #333;
+}
+
+/* ========= MAIN CONTENT ========= */
+
+.module h2, .module caption, .inline-group h2 {
+    background: #30caa0;
+}
+
+/* ========= MODELS CONTENT ========= */
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: #10284e;
+    color: white;
+}
+```
+
+## Customize Admin Display
+Adding multiple fields to show in the model table
+```python
+class ListingAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'is_published', 'price', 'list_date', 'realtor')
+```
+
+Adding links to the model
+```python
+class ListingAdmin(admin.ModelAdmin):
+	#
+	list_display_links = ('title',)
+```
+
+Adding filter
+```python
+class ListingAdmin(admin.ModelAdmin):
+	#	
+	list_filter = ('realtor',)
+```
+
+Change boolean field values from the table listing itself
+```python
+class ListingAdmin(admin.ModelAdmin):
+	#
+	list_editable = ('is_published',)
+```
+
+Add searchable fields
+```python
+class ListingAdmin(admin.ModelAdmin):
+	#
+	search_fields = ('title', 'description', 'address', 'city', 'state', 'zipcode', 'price')
+```
+
+Add pagination to the admin model page
+```python
+class ListingAdmin(admin.ModelAdmin):
+	#
+	list_per_page = 10
+```
+
+# View Methods, Display & Search
+
+## Pull Data from Listing Model
