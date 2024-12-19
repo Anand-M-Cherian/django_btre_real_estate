@@ -582,3 +582,878 @@ class ListingAdmin(admin.ModelAdmin):
 # View Methods, Display & Search
 
 ## Pull Data from Listing Model
+
+NOTE: Install pylint-django to remove django related syntactic errors  
+[Stackoverflow Thread](https://stackoverflow.com/questions/45135263/class-has-no-objects-member)
+```python
+def index(request):
+	# VS code may mark Listing as error
+    listings = Listing.objects.all()
+```
+
+### Pass in values as a dictionary in the render function call along with the html template (MVC Architecture)
+```python
+# listings/views.py
+
+from django.shortcuts import render
+from .models import Listing
+
+# Create your views here.
+
+def index(request):
+    listings = Listing.objects.all()
+    context = {
+        'listings': listings
+    }
+    return render(request, 'listings/listings.html', context)
+```
+
+```html
+<!-- templates/listings/listings.html -->
+
+{% if listings %}
+    {% for listing in listings %}
+    	<!-- Dynamically display the contents of each listings -->
+    {% endfor %}
+{% else %}
+    <!-- If there are no listings in the database -->
+     <div class="col-md-12">
+        <p>No Listings Available</p>
+     </div>
+{% endif %}
+```
+
+## Display Listings In Template
+
+### Pull the field values from a model
+```html
+<!-- templates/listings/listings.html -->
+
+<img class="card-img-top" src="{{ listing.photo_main.url }}" alt="">
+<h4 class="text-primary">{{ listing.title }}</h4>
+
+<!-- Will dipslay name since Realtor model returns self.name for __str__ function -->
+<div class="col-12">
+    <i class="fas fa-user"></i> {{ listing.realtor }}</div>
+</div>
+
+<!-- add model data in link url -->
+<a href="{% url 'listing' listing.id %}" class="btn btn-primary btn-block">
+    More Info
+</a>
+```
+
+[A set of Django template filters useful for adding a “human touch” to data.](https://docs.djangoproject.com/en/5.1/ref/contrib/humanize/)
+```python
+# settings.py
+
+INSTALLED_APPS = [
+	# 
+    'django.contrib.humanize',
+]
+```
+```html
+<!-- templates/listings/listings.html -->
+
+{% load humanize %}
+
+<!-- Converts an integer or float (or a string representation of either) to a string containing commas every three digits. -->
+<span class="badge badge-secondary text-white">
+    ${{ listing.price | intcomma }}
+</span>
+```
+
+## Pagination, Order & Filter
+
+[Fetching what we need from the database](https://docs.djangoproject.com/en/5.1/topics/pagination/#using-paginator-in-a-view-function)
+```python
+# listings/views.py
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+
+def index(request):
+    listings = Listing.objects.all()
+
+    # Pagination
+    paginator = Paginator(listings, 3)
+    page = request.GET.get('page') # page parameter from client request
+    paged_listings = paginator.get_page(page)
+
+    context = {
+        'listings': paged_listings
+    }
+    return render(request, 'listings/listings.html', context)
+```
+
+Displaying the right way
+[django](https://docs.djangoproject.com/en/5.1/topics/pagination/#paginating-a-listview)
+[bootstrap](https://getbootstrap.com/docs/4.0/components/pagination/#disabled-and-active-states)
+```html
+<!-- templates/listings/listings.html -->
+
+<div class="row">
+    <div class="col-md-12">
+        <!-- If there are further pages -->
+        <!-- Eg: listings per page is 6 but we only have 6 listings, then dont paginate -->
+        {% if listings.has_other_pages %}
+            <ul class="pagination">
+                <!-- checking for previous pages for the back arrow -->
+                {% if listings.has_previous %}
+                    <li class="page-item">
+                        <a href="?page={{ listings.previous_page_number }}" class="page-link">&laquo;</a>
+                    </li>
+                <!-- otherwise the link should be disabled without any href -->
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link">&laquo;</a>
+                    </li>
+                {% endif %}
+                
+                <!-- looping through our page range -->
+                {% for page_number in listings.paginator.page_range %}
+                    <!-- We are currently on the active page which has the current listings -->
+                    {% if listings.number == page_number %}
+                        <li class="page-item active">
+                            <a class="page-link">{{ page_number }}</a>
+                        </li>
+                    <!-- The inactive pages which contain the remaining listings -->
+                    {% else %}
+                        <li class="page-item">
+                            <a href="?page={{ page_number }}" class="page-link">{{ page_number }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- checking for next pages for the forward arrow -->
+                {% if listings.has_next %}
+                <li class="page-item">
+                    <a href="?page={{ listings.next_page_number }}" class="page-link">&raquo;</a>
+                </li>
+                <!-- otherwise the link should be disabled without any href -->
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link">&raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    </div>
+</div>
+```
+
+Filtering out and ordering the listings objects to be rendered in the front end webpage
+```python
+# listings/views.py
+
+def index(request):
+    listings = Listing.objects.order_by('-price').filter(is_published=True)
+    #
+```
+
+## Home & About Page Dynamic Content
+
+```python
+# pages/views.py
+
+from django.shortcuts import render
+from django.http import HttpResponse
+from listings.models import Listing
+from realtors.models import Realtor
+
+# Create your views here.
+
+def index(request):
+    listings = Listing.objects.order_by('-list_date').filter(is_published=True)[:3]
+    context = {
+        'listings': listings
+    }
+    return render(request, 'pages/index.html', context)
+
+def about(request):
+    realtors = Realtor.objects.order_by('-hire_date')
+    mvp_realtors = Realtor.objects.all().filter(is_mvp=True)
+
+    context = {
+        'realtors': realtors,
+        'mvp_realtors': mvp_realtors,
+    }
+    return render(request, 'pages/about.html', context)
+```
+```html
+<!-- templates/pages/about.html -->
+
+<div class="col-md-4">
+    {% if mvp_realtors %}
+        {% for realtor in mvp_realtors %}
+            <div class="card">
+                <img src="{{ realtor.photo.url }}" alt="{{ realtor.name }}">
+                <div class="card-body">
+                    <h5 class="card-title">Seller Of The Month</h5>
+                    <h6 class="text-secondary">{{ realtor.name }}</h6>
+                    <p class="card-text">{{ realtor.description }}</p>
+                </div>
+            </div>  
+        {% endfor %}
+    <!-- No need of an else, because we are not going to display anything if there are no mvp_realtors -->
+    {% endif %}
+</div>
+
+<div class="row text-center">
+    {% if realtors %}
+        {% for realtor in realtors %}
+            <div class="col-md-4">
+                <img src="{{ realtor.photo.url }}" alt="{{ realtor.name }}" class="rounded-circle mb-3">
+                <h4>{{ realtor.name }}</h4>
+                <p class="text-success">
+                <i class="fas fa-award text-success mb-3"></i> Realtor</p>
+                <hr>
+                <p>
+                <i class="fas fa-phone"></i> {{ realtor.phone }}</p>
+                <p>
+                <i class="fas fa-envelope-open"></i> {{ realtor.email }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-md-12">
+            <p>No Realtors Available</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- templates/pages/index.html -->
+
+<div class="row">
+    {% if listings %}
+        {% for listing in listings %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card listing-preview">
+                    <img class="card-img-top" src="{{ listing.photo_main.url }}" alt="{{ listing.title }}">
+                    <div class="card-img-overlay">
+                        <h2>
+                        <span class="badge badge-secondary text-white">${{listing.price | intcomma}}</span>
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="listing-heading text-center">
+                        <h4 class="text-primary">{{ listing.title }}</h4>
+                        <p>
+                            <i class="fas fa-map-marker text-secondary"></i> 
+                            {{ listing.city }} {{ listing.state }}, {{ listing.zipcode }}
+                        </div>
+                        <hr>
+                        <div class="row py-2 text-secondary">
+                        <div class="col-6">
+                            <i class="fas fa-th-large"></i> Sqft: {{ listing.sqft }}</div>
+                        <div class="col-6">
+                            <i class="fas fa-car"></i> Garage: {{ listing.garage }}</div>
+                        </div>
+                        <div class="row py-2 text-secondary">
+                        <div class="col-6">
+                            <i class="fas fa-bed"></i> Bedrooms: {{ listing.bedrooms }}</div>
+                        <div class="col-6">
+                            <i class="fas fa-bath"></i> Bathrooms: {{ listing.bathrooms }}</div>
+                        </div>
+                        <hr>
+                        <div class="row py-2 text-secondary">
+                        <div class="col-6">
+                            <i class="fas fa-user"></i> {{ listing.realtor }}</div>
+                        </div>
+                        <div class="row text-secondary pb-2">
+                        <div class="col-6">
+                            <i class="fas fa-clock"></i> {{ listing.list_date | timesince }}</div>
+                        </div>
+                        <hr>
+                        <a href="{% url 'listing' listing.id %}" class="btn btn-primary btn-block">
+                            More Info
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-md-12">
+            <p>No Listings available</p>
+        </div>
+    {% endif %}
+</div>
+```
+
+## Single Listing Page
+
+get object or return 404 error
+```python
+# listings/views.py
+from django.shortcuts import get_object_or_404
+
+def listing(request, listing_id):
+    listing = get_object_or_404(Listing, pk=listing_id)
+
+    context = {
+        'listing': listing
+    }
+    return render(request, 'listings/listing.html', context)
+```
+```html
+<!-- template/listings/listing.html -->
+
+<img class="card-img-top" src="{{ listing.realtor.photo.url }}" alt="{{ listing.realtor }}">
+```
+
+## Search Form Choices
+
+required key value pairs as dictionaries
+```python
+# listings/choices.py
+
+price_choices = {
+	# dictionary key -> html value attribute, dictionary value -> html innertext
+	'100000':'$100,000',
+	'200000':'$200,000',
+	# 
+}
+
+# pages/views.py
+from listings.choices import price_choices, bedroom_choices, state_choices
+
+def index(request):
+    listings = Listing.objects.order_by('-list_date').filter(is_published=True)[:3]
+    context = {
+        'listings': listings,
+        'price_choices': price_choices, 
+        'bedroom_choices': bedroom_choices, 
+        'state_choices': state_choices
+    }
+    return render(request, 'pages/index.html', context)
+```
+```html
+<!-- templates/pages/index.html -->
+<!-- templates/listings/search.html -->
+
+<!-- calls the search view function in the listings/views.py by assigning it to the action attribute -->
+<form action="{% url 'search' %}">	
+	{% for key, value in price_choices.items %}
+	    <option value="{{ key }}">{{ value }}</option>
+	{% endfor %}
+</form>
+
+
+```
+
+## Search Form Filtering
+
+For each keyword:
+1. Check whether its available in the request which is a GET request
+2. Pull it out from the query set and store into a variable
+3. Make it part of the filter condition of the query set
+
+[Query Set Field Lookups - icontains](<!-- calls the search view function in the listings/views.py -->)
+```python
+# listings/views.py
+
+def search(request):
+    queryset_list = Listing.objects.all().order_by('-list_date')
+    
+    # Keywords
+    if 'keywords' in request.GET:
+        # Get the value from the form field which has the attribute name=keywords
+        # <input type="text" name="keywords" class="form-control" placeholder="Keyword (Pool, Garage, etc)"/>
+        keywords = request.GET['keywords']
+        # Handling case of empty string by nesting a second if
+        if keywords:
+            queryset_list = queryset_list.filter(description__icontains=keywords)
+
+    context = {
+    	# 
+        'listings': queryset_list,
+    }
+    return render(request, 'listings/search.html', context)
+```
+
+## Preserving Form Input
+
+Giving the GET request parameters to the html page through the render function
+```python
+# listings/views.py
+
+def search(request):
+	# 
+
+    context = {
+    	# 
+        'values': request.GET,
+    }
+    return render(request, 'listings/search.html', context)
+```
+```html
+<!-- listings/search.html -->
+
+<!-- {{ values.<<param>> }} -->
+<!-- param should be the parameter in the GET request which is actually the name attribute of the html form element -->
+
+<!-- text input fields -->
+<div class="col-md-4 mb-3">
+  <label class="sr-only">City</label>
+  <input
+      type="text"
+      name="city"
+      class="form-control"
+      placeholder="City"
+      value="{{ values.city }}"
+  />
+</div>
+
+<!-- select drop down input fields -->
+<label class="sr-only">Bedrooms</label>
+<select name="bedrooms" class="form-control">
+  <option selected="true" disabled="disabled">
+      Bedrooms (Any)
+  </option>
+  {% for key, value in bedroom_choices.items %}
+    <option value="{{ key }}"
+      {% if key == values.bedrooms %}
+        selected
+      {% endif %}
+    >
+      {{ value }}
+    </option>
+  {% endfor %}
+</select>
+```
+
+# Accounts & Authentication
+
+## Account App & URLs
+
+Django already has user module (auth_user table in db). We just need to reuse it.
+But when user is created through front end, they should not marked as staff and given admin access.
+
+1. startapp accounts and add to settings.py
+2. create urls.py file and add the required path routes
+3. include in the urls.py of the project
+
+## Register & Login Templates
+
+Changing form method to POST from the default GET. Add csrf token to tie the form with the user session.
+csrf token is actually a hidden input element with the value as the token.
+```html
+<!-- templates/accounts/login.html -->
+<!-- templates/accounts/register.html -->
+
+<form action="{% url "register" %}" method="POST">
+    {% csrf_token %}
+    <!--  -->
+    <input type="submit" value="Login" class="btn btn-secondary btn-block">
+</form>
+```
+modifying the view functions to handle both GET and POST methods
+```python
+# accounts/views.py
+
+def register(request):
+    if request.method == 'POST':
+        print('SUBMITTED REG')
+        return redirect('register')
+    else:
+        return render(request, 'accounts/register.html')
+```
+
+## Message Alerts (setting up bootstrap-django message alerts)
+
+[Django already has a messages app that we can configure and reuse](https://docs.djangoproject.com/en/5.1/ref/contrib/messages/#message-tags)
+```python
+# settings.py
+
+# Messages
+
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.ERROR: "danger",
+}
+```
+```html
+<!-- templates/partials/_alerts.html -->
+<!-- reusable across any bootstrap-django projects as an error/message output -->
+
+<!-- check if there are any messages -->
+{% if messages %}
+    <!-- If so, loop through each message -->
+    {% for message in messges %}
+        <div id="message" class="container">
+            <!-- bootstrap markup -->
+            <!-- We already confifured messages.ERROR = 'danger' in MESSAGE_TAGS in settings.py -->
+            <!-- alert-dismissible with a close button to dismiss the alert -->
+            <div class="alert alert-{{ message.tags }} alert-dismissible text-center" role="alert">
+                <!-- button to close the dismissible alert -->
+                <buttton type="button" class="close" data-dismiss="alert">
+                    <!-- X mark for the button text -->
+                    <span aria-hiddent="true">&times;</span>
+                    <strong>
+                        <!-- Check if the message is an error -->
+                        {% if messsage.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                            Error
+                        {% else %}
+                            {{ message.tags | title }}
+                        {% endif %}
+                    </strong>
+                    <!-- show the actual message -->
+                    {{ message }}
+                </buttton>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+```
+linking the partials alert.html to the register template
+```html
+<!-- templates/accounts/register.html -->
+<!-- templates/accounts/login.html -->
+
+<div class="card-body">
+    <!-- ALERTS -->
+    {% include "partials/_alerts.html" %}
+    <form action="{% url "register" %}" method="POST">
+        {% csrf_token %}
+        <!--  -->
+        <input type="submit" value="Register" class="btn btn-secondary btn-block">
+    </form>
+</div>
+```
+testing the message.error alert
+```python
+# accounts/views.py
+
+from django.contrib import messages
+
+def register(request):
+    if request.method == 'POST':
+        # REGISTER
+        messages.error(request, 'testing error message')
+        return redirect('register')
+    else:
+        return render(request, 'accounts/register.html')
+```
+setting a timeout for the error to dismiss on its own
+```js
+// btre/static/js/main.js
+
+setTimeout(function() {
+    $('#message').fadeOut('slow');
+}, 3000);
+```
+Since we modified static, we need to run createstatic again so that it goes to the main static folder.
+This moves the jQuery to BASE_DIR/static/js/main.js
+```console
+$ py manage.py collectstatic
+
+You have requested to collect static files at the destination
+location as specified in your settings:
+
+    C:\Users\anand\OneDrive\Documents\Projects\btre_project\static
+
+This will overwrite existing files!
+Are you sure you want to do this?
+
+Type 'yes' to continue, or 'no' to cancel: yes
+
+130 static files copied to 'C:\Users\anand\OneDrive\Documents\Projects\btre_project\static', 29 unmodified.
+```
+**Debugging when jQuery in js file does not work**
+1. Right click
+2. View page source
+3. Check main.js in the script tag
+4. Ensure that collectstatic has added the new js code
+
+## User Registration
+
+```python
+# accounts/views.py
+
+from django.shortcuts import render, redirect
+from django.contrib import messages, auth
+from django.contrib.auth.models import User
+
+# Create your views here.
+
+def register(request):
+    if request.method == 'POST':
+        # Get Form Values
+        first_name = request.POST['first_name']
+        last_name = request.POST['last_name']
+        username = request.POST['username']
+        email = request.POST['email']
+        password = request.POST['password']
+        password_2 = request.POST['password2']
+
+        # Check if passwords match
+        if password == password_2:
+            # Check username
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'Username already exists')
+                return redirect('register')
+            else:
+                # Check email
+                if User.objects.filter(email=email).exists():
+                    messages.error(request, 'Email already exists')
+                    return redirect('register')
+                else:
+                    # Validations passed
+                    user = User.objects.create_user(
+                        username=username,
+                        password=password,
+                        email=email,
+                        first_name=first_name,
+                        last_name=last_name,
+                    )
+                    # Login after register
+                    # auth.login(request, user)
+                    # messages.success(request, 'User registered and logged in')
+                    # return redirect('index')
+
+                    # Register but redirect to login page for manual login
+                    user.save()
+                    messages.success(request, 'User registered. Please proceed to log in')
+                    return redirect('login')
+        else:
+            messages.error(request, 'Passwords do not match')
+            return redirect('register')
+    else:
+        return render(request, 'accounts/register.html')
+```
+- passwords are automatically hashed by django
+
+Adding the alerts notification on the index page
+```html
+<!-- templates/pages/index.html -->
+
+<!-- Alerts from partials/_alerts.html -->
+{% include "partials/_alerts.html" %}
+```
+
+## User Login
+
+```python
+# accounts/views.py
+
+def login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+
+        user = auth.authenticate(username=username, password=password)
+
+        # User found
+        if user is not None:
+            auth.login(request, user)
+            messages.success(request, 'Logged in succesfully')
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Invalid Credentials')
+            return redirect('login')
+    else:
+        return render(request, 'accounts/login.html')
+```
+
+## Logout & Navbar Auth Links
+
+Setting up the dashboard.html page and updating breadcrumb links
+
+**Note: user object is available in all templates by default**
+```python
+# settings.py
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / "templates"],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',  # <- This one adds `user`
+                'django.template.context_processors.csrf',
+            ],
+        },
+    },
+]
+```
+### Logout
+Logout should be a POST request and hence we are adding it as form in the navbar that will look like a link
+```html
+<!-- templates/partials/_navbar.html -->
+
+<li class="nav-item mr-3">
+	<!-- Clicking on the logout link, will trigger the javascript code to submit the hidden form -->
+    <a href="javascript:{document.getElementById('logout').submit()}" class="nav-link">
+        <i class="fas fa-sign-out-alt"></i>Logout
+    </a>
+    <form action="{% url "logout" %}" id="logout" method="POST">
+        {% csrf_token %}
+        <input type="hidden">
+    </form>
+</li>
+```
+```python
+# accounts/view.py
+
+def logout(request):
+    if request.method == 'POST':
+        auth.logout(request)
+        messages.success(request, 'User has been logged out')
+        return redirect('index')
+```
+Adding the alerts notification on the dashboard page
+```html
+<!-- templates/pages/dashboard.html -->
+
+<!-- Alerts from partials/_alerts.html -->
+{% include "partials/_alerts.html" %}
+```
+
+## Dynamic Page Titles
+
+Each page should have a relevant title so that if our site comes up on google search, then the link shows the title
+```html
+<!-- templates/base.html -->
+
+<head>
+	<!--  -->
+    <title>BT Real Estate {% block title %}{% endblock title %}</title>
+</head>
+
+<!-- Other pages. Eg: templates/listings/search.html -->
+{% block title %}
+    | Search BTRE Listings
+{% endblock title %}
+```
+
+# Contact Inquiries
+
+## Contacts App & Model
+
+1. startapp for contacts
+2. setting up contact model
+3. adding to the installed apps in settings.py
+4. makemigrations
+5. migrate
+
+## Contacts Admin Customization
+
+1. Set up the admin for the model
+2. Choose list_display, list_display_links, search_fields, list_per_page
+
+## Contact Form Prep
+
+```html 
+<!-- templates/listings/listing.html -->
+
+  <form action="{% url "contact" %}" method="POST">
+    {% csrf_token %}
+    <!-- Pass in the user id of the authenticated user -->
+    {% if user.is_authenticated %}
+      <input type="hidden" name="user_id" value="{{ user.id }}">
+    {% else %}
+      <input type="hidden" name="user_id" value="0">
+    {% endif %}
+    <!-- We need to notify the realtor when there is a contact submission. So passing in realtor email -->
+     <input type="hidden" name="realtor_email" value={{ listing.realtor.email }}>
+     <input type="hidden" name="listing_id" value={{ listing.id }}>
+    <div class="form-group">
+      <label for="property_name" class="col-form-label">Property:</label>
+      <input type="text" name="listing" class="form-control" value="{{ listing.title }}" disabled>
+    </div>
+    <div class="form-group">
+      <label for="name" class="col-form-label">Name:</label>
+      <input type="text" name="name" class="form-control"
+        {% if user.is_authenticated %}
+          value=user.name
+        {% endif %}
+      required>
+    </div>
+    <div class="form-group">
+      <label for="email" class="col-form-label">Email:</label>
+      <input type="email" name="email" class="form-control"
+      {% if user.is_authenticated %}
+        value=user.email
+      {% endif %}
+      required>
+    </div>
+    <div class="form-group">
+      <label for="phone" class="col-form-label">Phone:</label>
+      <input type="text" name="phone" class="form-control">
+    </div>
+    <div class="form-group">
+      <label for="message" class="col-form-label">Message:</label>
+      <textarea name="message" class="form-control"></textarea>
+    </div>
+    <hr>
+    <input type="submit" value="Send" class="btn btn-block btn-secondary">
+  </form>
+```
+- setting up the urls, adding the include in the main urls.py
+- setting up the method in views.py
+
+## Contact Form Submission
+
+I made a few changes of my own
+```python
+# contacts/views.py
+
+def contact(request):
+    if request.method == "POST":
+        listing_id = request.POST['listing_id']
+        name = request.POST['name']
+        email = request.POST['email']
+        phone = request.POST['phone']
+        message = request.POST['message']
+        user_id = request.POST['user_id']
+        realtor_email = request.POST['realtor_email']
+        
+        contact = Contact(
+            listing=Listing.objects.get(id=listing_id),
+            name=name,
+            email=email,
+            phone=phone,
+            message=message,
+            user_id=user_id,
+            realtor_email=realtor_email
+        )
+
+        contact.save()
+
+        messages.success(request, 'Your inquiry has been submitted. A realtor will soon reach out to you.')
+
+        return redirect('/listings/'+listing_id)
+
+# contacts/models.py
+
+class Contact(models.Model):
+    listing = models.ForeignKey(Listing, on_delete=models.DO_NOTHING)
+    name = models.CharField(max_length=200)
+    email = models.CharField(max_length=100)
+    phone = models.CharField(max_length=100)
+    message = models.CharField(blank=True)
+    contact_date = models.DateTimeField(default=datetime.now, blank=True)
+    # User who is logged in should also be able to make inquiry. So making it optional.
+    user_id = models.IntegerField(blank=True)
+    realtor_email = models.CharField(max_length=100)
+
+def __str__(self):
+    return self.name
+```
+```html
+<!-- templates/listings/listing.html -->
+
+<!-- Alerts from partials/_alerts.html -->
+{% include "partials/_alerts.html" %}
+
+<input type="hidden" name="listing_id" value={{ listing.id }}>
+
+<!-- Property field was removed later -->
+ <!--  
+  <div class="form-group">
+    <label for="property_name" class="col-form-label">Property:</label>
+    <input type="text" name="listing" class="form-control" value="{{ listing.id }}">
+  </div>
+-->
+```
