@@ -1457,3 +1457,94 @@ def __str__(self):
   </div>
 -->
 ```
+
+## Inquiry Check & Send Email
+
+Checking whether user has already inquired about the listing
+```python
+# contacts/views.py
+
+def contact(request):
+	# 
+	
+    # Check if user has already made an inquiry for the listing
+    if request.user.is_authenticated:
+        user_id = request.user.id
+        has_contacted = Contact.objects.all().filter(listing_id=listing_id, user_id=user_id)
+        if has_contacted:
+            messages.error(request, 'You have already made an inquiry for the listing')
+            return redirect('/listings/'+listing_id)
+```
+
+[Sending email](https://docs.djangoproject.com/en/5.1/topics/email/#module-django.core.mail)
+```python
+# contacts/views.py
+
+from django.core.mail import send_mail
+
+def contact(request):
+    # 
+    send_mail(
+        "Property Listing Inquiry : " + listing.title,
+        "There has been an inquiry for " + listing.title + '. Sign in to the admin panel for more info.',
+        "amc.fullstack@gmail.com",
+        ["anandcherian.585@gmail.com", realtor_email],
+        fail_silently=False,
+    )
+
+# settings.py
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'amc.fullstack@gmail.com'
+EMAIL_HOST_PASSWORD = 'silenziobruno'
+EMAIL_USE_TLS = True
+```
+
+## Dashboard Functionality
+
+```html
+<!-- templates/accounts/dashboard.html -->
+
+{% if contacts %}
+    <h2>Welcome {{ user.first_name }}</h2>
+    <p>Here are the property listings that you have inquired about</p>
+    <table class="table">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Property</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+            {% for contact in contacts %}
+                <tr>
+                    <td>{{ contact.id }}</td>
+                    <td>{{ contact.listing }}</td>
+                    <td>
+                    <a class="btn btn-light" href="{% url "listing" contact.listing_id %}">
+                        View Listing
+                    </a>
+                    </td>
+                </tr>     
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You have not made any inquiries</p>
+{% endif %}
+```
+```python
+# accounts/dashboard.py
+
+from contacts.models import Contact
+
+def dashboard(request):
+    user_contacts = Contact.objects.order_by('-contact_date').filter(user_id=request.user.id)
+
+    context = {
+        'contacts': user_contacts
+    }
+    return render(request, 'accounts/dashboard.html', context)
+```
