@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     'realtors',
     'accounts',
     'contacts',
+    'api',
+    'rest_framework',
+
+    # Default
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
