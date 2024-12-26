@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'contacts',
     'api',
     'rest_framework',
+    'rest_framework.authtoken',
 
     # Default
     'django.contrib.admin',
@@ -49,6 +50,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

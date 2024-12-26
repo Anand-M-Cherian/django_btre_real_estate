@@ -2,5 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('listings', views.GetListings.as_view()),
+    path('listings', views.ListCreateListingsView.as_view()),
+    path('listings/<int:pk>', views.GetUpdateDeleteListingView.as_view()),
+
+    # Auth
+    path('signup', views.signup),
+    path('login', views.login)
 ]
