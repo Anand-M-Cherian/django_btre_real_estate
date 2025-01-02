@@ -1,0 +1,548 @@
+{
+	"info": {
+		"_postman_id": "e3178d35-0c0b-4a77-b4bc-613aa8e5dd0b",
+		"name": "BTRE_API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26054989"
+	},
+	"item": [
+		{
+			"name": "Signup",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"test_user_1\",\n    \"password\": \"abcd1234\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/signup",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"signup"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disabledSystemHeaders": {}
+			},
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"anand\",\n    \"password\": \"Qwerty123!@\"\n}"
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/login",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"login"
+					]
+				},
+				"description": "This is a POST request, submitting data to an API via the request body. This request submits JSON data, and the data is reflected in the response.\n\nA successful POST request typically returns a `200 OK` or `201 Created` response code."
+			},
+			"response": []
+		},
+		{
+			"name": "Listings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/listings",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"listings"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listings",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 48569f076b76efbb5ac87e91403db8fa1c05d755",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "Test Listing from POSTMAN",
+							"type": "text"
+						},
+						{
+							"key": "address",
+							"value": "Test Address ",
+							"type": "text"
+						},
+						{
+							"key": "city",
+							"value": "Test City",
+							"type": "text"
+						},
+						{
+							"key": "state",
+							"value": "Test State",
+							"type": "text"
+						},
+						{
+							"key": "zipcode",
+							"value": "682024",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "Test Description",
+							"type": "text"
+						},
+						{
+							"key": "price",
+							"value": "444000",
+							"type": "text"
+						},
+						{
+							"key": "bedrooms",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "bathrooms",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "garage",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "sqft",
+							"value": "1234",
+							"type": "text"
+						},
+						{
+							"key": "lot_size",
+							"value": "1.9",
+							"type": "text"
+						},
+						{
+							"key": "photo_main",
+							"type": "file",
+							"src": "/C:/Users/anand/Downloads/btre_resources/btre_resources/images/homes/home-1.jpg"
+						},
+						{
+							"key": "photo_1",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "photo_2",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "photo_3",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "photo_4",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "photo_5",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "photo_6",
+							"type": "file",
+							"src": []
+						},
+						{
+							"key": "is_published",
+							"value": "True",
+							"type": "text"
+						},
+						{
+							"key": "realtor",
+							"value": "1",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/listings?Authorization=Token d28f671348aae20304b0f203ad2909eea17f1888",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"listings"
+					],
+					"query": [
+						{
+							"key": "Authorization",
+							"value": "Token d28f671348aae20304b0f203ad2909eea17f1888"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listing",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/listings/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"listings",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listing",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token d28f671348aae20304b0f203ad2909eea17f1888",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "title",
+							"value": "Test Listing from POSTMAN Update Two",
+							"type": "text"
+						},
+						{
+							"key": "address",
+							"value": "Test Address ",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "city",
+							"value": "Test City",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "state",
+							"value": "Test State",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "zipcode",
+							"value": "555555",
+							"type": "text"
+						},
+						{
+							"key": "description",
+							"value": "Test Description",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "price",
+							"value": "444000",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "bedrooms",
+							"value": "2",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "bathrooms",
+							"value": "2",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "garage",
+							"value": "1",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "sqft",
+							"value": "1234",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "lot_size",
+							"value": "1.9",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "photo_main",
+							"type": "file",
+							"src": "/C:/Users/anand/Downloads/btre_resources/btre_resources/images/homes/home-1.jpg",
+							"disabled": true
+						},
+						{
+							"key": "photo_1",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "photo_2",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "photo_3",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "photo_4",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "photo_5",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "photo_6",
+							"type": "file",
+							"src": [],
+							"disabled": true
+						},
+						{
+							"key": "is_published",
+							"value": "True",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "realtor",
+							"value": "1",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/listings/13?Authorization=Token d28f671348aae20304b0f203ad2909eea17f1888",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"listings",
+						"13"
+					],
+					"query": [
+						{
+							"key": "Authorization",
+							"value": "Token d28f671348aae20304b0f203ad2909eea17f1888"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listing",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token d28f671348aae20304b0f203ad2909eea17f1888",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/listings/13?Authorization=Token d28f671348aae20304b0f203ad2909eea17f1888",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"listings",
+						"13"
+					],
+					"query": [
+						{
+							"key": "Authorization",
+							"value": "Token d28f671348aae20304b0f203ad2909eea17f1888"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Contacts",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token 48569f076b76efbb5ac87e91403db8fa1c05d755",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/contacts",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"contacts"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
