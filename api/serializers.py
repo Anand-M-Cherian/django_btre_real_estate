@@ -2,16 +2,16 @@ from rest_framework import serializers
 from listings.models import Listing
 from contacts.models import Contact
 
-class GetListingsSerializer(serializers.ModelSerializer):
+class ListingsSerializer(serializers.ModelSerializer):
     list_date = serializers.ReadOnlyField()
 
     class Meta:
         model = Listing
-        fields = ['id', 'title', 'address', 'city', 'state', 'zipcode', 'description', 'price', 'bedrooms', 'bathrooms', 'garage', 'sqft', 'lot_size', 'is_published', 'realtor', 'list_date']
+        fields = '__all__'
 
-class CreateListingsSerializer(serializers.ModelSerializer):
+class ContactsSerializer(serializers.ModelSerializer):
     list_date = serializers.ReadOnlyField()
 
     class Meta:
-        model = Listing
+        model = Contact
         fields = '__all__'

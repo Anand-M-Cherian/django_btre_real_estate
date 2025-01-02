@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions
-from .serializers import GetListingsSerializer, CreateListingsSerializer
+from .serializers import ListingsSerializer, ContactsSerializer
 from listings.models import Listing
+from contacts.models import Contact
 from django.http import JsonResponse
 from http import HTTPStatus
 from django.views.decorators.csrf import csrf_exempt
@@ -83,7 +84,7 @@ class IsStaffUser(permissions.BasePermission):
 # =============== FUNCTIONALITIES ===============
 
 class ListCreateListingsView(generics.ListCreateAPIView):
-    serializer_class = CreateListingsSerializer
+    serializer_class = ListingsSerializer
     queryset = Listing.objects.all().order_by('-list_date')
     permission_classes = [IsStaffUser]
 
@@ -95,7 +96,7 @@ class ListCreateListingsView(generics.ListCreateAPIView):
         return Response({"message": "Listing created successfully"}, status=201)
     
 class GetUpdateDeleteListingView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = CreateListingsSerializer
+    serializer_class = ListingsSerializer
     queryset = Listing.objects.all()
     lookup_field = 'pk'
     permission_classes = [IsStaffUser]
@@ -105,3 +106,12 @@ class GetUpdateDeleteListingView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+class ListContactsView(generics.ListAPIView):
+    serializer_class = ContactsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        contacts = Contact.objects.filter(user_id=user_id)
+        return contacts
